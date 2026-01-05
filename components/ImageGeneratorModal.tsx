@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Image as ImageIcon, Wand2, Download, RefreshCcw } from 'lucide-react';
+import { X, Image as ImageIcon, Wand2, Download, RefreshCcw, Palette } from 'lucide-react';
 import { generateImage } from '../services/geminiService';
 
 interface ImageGeneratorModalProps {
@@ -17,9 +17,21 @@ const ASPECT_RATIOS = [
   { label: '21:9', value: '16:9' }, // Map to closest supported
 ];
 
+const IMAGE_STYLES = [
+  { label: 'None', value: '' },
+  { label: 'Photorealistic', value: 'photorealistic high-detail photography' },
+  { label: 'Cartoon', value: 'vibrant cartoon 3d style' },
+  { label: 'Watercolor', value: 'soft watercolor painting' },
+  { label: 'Oil Painting', value: 'classic oil painting with visible brushstrokes' },
+  { label: 'Digital Art', value: 'modern clean digital art' },
+  { label: 'Cyberpunk', value: 'cyberpunk aesthetic with neon lights' },
+  { label: 'Sketch', value: 'pencil sketch drawing' },
+];
+
 export const ImageGeneratorModal: React.FC<ImageGeneratorModalProps> = ({ onClose }) => {
   const [prompt, setPrompt] = useState('');
   const [aspectRatio, setAspectRatio] = useState('1:1');
+  const [selectedStyle, setSelectedStyle] = useState('');
   const [loading, setLoading] = useState(false);
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +52,11 @@ export const ImageGeneratorModal: React.FC<ImageGeneratorModalProps> = ({ onClos
         // Proceeding as instructed: assume selection successful after openSelectKey
       }
 
-      const imageUrl = await generateImage(prompt, aspectRatio);
+      const finalPrompt = selectedStyle 
+        ? `${prompt}, in ${selectedStyle} style` 
+        : prompt;
+
+      const imageUrl = await generateImage(finalPrompt, aspectRatio);
       setGeneratedImageUrl(imageUrl);
     } catch (err: any) {
       console.error(err);
@@ -83,7 +99,7 @@ export const ImageGeneratorModal: React.FC<ImageGeneratorModalProps> = ({ onClos
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
             {/* Input Panel */}
-            <div className="p-6 border-r border-gray-100 dark:border-gray-800">
+            <div className="p-6 border-r border-gray-100 dark:border-gray-800 h-[600px] overflow-y-auto custom-scrollbar">
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
@@ -93,8 +109,30 @@ export const ImageGeneratorModal: React.FC<ImageGeneratorModalProps> = ({ onClos
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     placeholder="Contoh: Pemandangan matahari terbenam di Pantai Tanjung Waka dengan kapal nelayan tradisional..."
-                    className="w-full h-32 p-4 text-sm bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all dark:text-white"
+                    className="w-full h-24 p-4 text-sm bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all dark:text-white resize-none"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                    <Palette className="w-4 h-4 text-indigo-500" />
+                    Artistic Style
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {IMAGE_STYLES.map((style) => (
+                      <button
+                        key={style.label}
+                        onClick={() => setSelectedStyle(style.value)}
+                        className={`py-2 px-3 text-xs font-semibold rounded-lg border transition-all text-left truncate ${
+                          selectedStyle === style.value
+                            ? 'bg-indigo-600 border-indigo-600 text-white shadow-md'
+                            : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-indigo-400'
+                        }`}
+                      >
+                        {style.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div>
@@ -107,8 +145,8 @@ export const ImageGeneratorModal: React.FC<ImageGeneratorModalProps> = ({ onClos
                         key={ratio.label}
                         onClick={() => setAspectRatio(ratio.value)}
                         className={`py-2 text-xs font-bold rounded-lg border transition-all ${
-                          aspectRatio === ratio.value && (ratio.label === '1:1' || ratio.label === '3:4' || ratio.label === '4:3' || ratio.label === '9:16' || ratio.label === '16:9')
-                            ? 'bg-indigo-600 border-indigo-600 text-white'
+                          aspectRatio === ratio.value
+                            ? 'bg-indigo-600 border-indigo-600 text-white shadow-md'
                             : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-indigo-400'
                         }`}
                       >
@@ -146,11 +184,11 @@ export const ImageGeneratorModal: React.FC<ImageGeneratorModalProps> = ({ onClos
             </div>
 
             {/* Preview Panel */}
-            <div className="p-6 bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center min-h-[300px]">
+            <div className="p-6 bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center min-h-[400px]">
               {generatedImageUrl ? (
                 <div className="w-full flex flex-col gap-4">
                   <div className="relative rounded-xl overflow-hidden shadow-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                    <img src={generatedImageUrl} alt="Generated" className="w-full h-auto" />
+                    <img src={generatedImageUrl} alt="Generated" className="w-full h-auto max-h-[450px] object-contain mx-auto" />
                   </div>
                   <button
                     onClick={handleDownload}
@@ -166,7 +204,7 @@ export const ImageGeneratorModal: React.FC<ImageGeneratorModalProps> = ({ onClos
                   </div>
                   <div className="max-w-[200px]">
                     <p className="text-sm font-bold text-gray-900 dark:text-white">Belum Ada Visual</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Masukkan deskripsi dan pilih aspek rasio untuk memulai.</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Masukkan deskripsi, pilih gaya artistik, dan tentukan aspek rasio untuk memulai.</p>
                   </div>
                 </div>
               )}
