@@ -1,0 +1,5 @@
+{
+  "name": "PORTAL DATA SULA",
+  "description": "A dynamic landing page builder powered by Google Sheets and Gemini API. It fetches content directly from a spreadsheet and includes an AI assistant to answer questions about the page content.",
+  "requestFramePermissions": []
+}
